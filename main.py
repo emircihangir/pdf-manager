@@ -2,6 +2,19 @@ import tkinter as tk
 from tkinter import filedialog
 
 # region ui functions
+def open_help_window() -> None:
+    new_window = tk.Toplevel(root)
+    new_window.title("Help")
+    new_window.geometry("300x200")
+    tk.Label(new_window, text="How do I define range?",
+             anchor='w', font=("Arial", 14, "bold")).pack(fill='x', padx=10)
+    _text="""With the dash (-) character. (1-10) means pages from 1 to 10 (both included).
+You can add other pages by seperating them with commas. For example:
+(1-4),8,6 means pages 1,2,3,4,8,6
+5,2,(3-7),1 means pages 5,2,3,4,5,6,7,1
+    """
+    tk.Label(new_window, text=_text, anchor="w", justify='left').pack(fill='x', padx=10)
+
 def pick_file() -> str | None:
     """
     :return: The chosen file's path. Returns None if no file is selected.
