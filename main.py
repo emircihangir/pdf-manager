@@ -17,11 +17,13 @@ def handle_file_pick() -> None:
     file_path = pick_file()
     if file_path is not None: selected_file_label.config(text=file_path)
 
+# noinspection PyUnusedLocal
 def add_placeholder(event) -> None:
     if entry2.get() == "":
         entry2.insert(0, placeholder)
         entry2.config(fg='grey')
 
+# noinspection PyUnusedLocal
 def remove_placeholder(event) -> None:
     if entry2.get() == placeholder:
         entry2.delete(0, tk.END)
@@ -56,7 +58,7 @@ entry2.bind("<FocusOut>", add_placeholder)
 frame2.pack(side="left")
 radio_frame.pack(pady=2)
 
-confirm_button = tk.Button(root, text="Confirm", command=handle_file_pick)
+confirm_button = tk.Button(root, text="Confirm")
 confirm_button.pack(pady=20)
 
 help_button = tk.Button(root, text="Help")
