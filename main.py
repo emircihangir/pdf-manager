@@ -1,5 +1,9 @@
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
+
+# region global variables
+selected_file: str | None = None
+# endregion
 
 # region ui functions
 def open_help_window() -> None:
@@ -11,8 +15,7 @@ def open_help_window() -> None:
     _text="""With the dash (-) character. (1-10) means pages from 1 to 10 (both included).
 You can add other pages by seperating them with commas. For example:
 (1-4),8,6 means pages 1,2,3,4,8,6
-5,2,(3-7),1 means pages 5,2,3,4,5,6,7,1
-    """
+5,2,(3-7),1 means pages 5,2,3,4,5,6,7,1"""
     tk.Label(new_window, text=_text, anchor="w", justify='left').pack(fill='x', padx=10)
 
 def pick_file() -> str | None:
@@ -25,10 +28,14 @@ def pick_file() -> str | None:
 
 def handle_file_pick() -> None:
     """
-    Updates the selected_file_label content with the selected file's path.
+    Updates the selected_file_label content and the selected_file
+    global variable with the selected file's path.
     """
+    global selected_file
     file_path = pick_file()
-    if file_path is not None: selected_file_label.config(text=file_path)
+    if file_path is not None:
+        selected_file = file_path
+        selected_file_label.config(text=file_path)
 
 # noinspection PyUnusedLocal
 def add_placeholder(event) -> None:
@@ -41,6 +48,21 @@ def remove_placeholder(event) -> None:
     if entry2.get() == placeholder:
         entry2.delete(0, tk.END)
         entry2.config(fg='black')
+
+def is_valid_range_input() -> bool:
+    pass
+
+def confirm_process() -> None:
+    if selected_file is None:
+        messagebox.showwarning(message="Please select a PDF file")
+        return
+
+    if selected_option.get() == 2 and not is_valid_range_input():
+        messagebox.showwarning(message="Invalid range input")
+        return
+
+    listbox.insert(tk.END, selected_file)
+
 # endregion
 
 # region building the ui
@@ -49,7 +71,7 @@ root.geometry("600x400")
 root.title("PDF Manager")
 
 selected_file_label = tk.Label(root, text="No file selected")
-selected_file_label.pack(pady=20)
+selected_file_label.pack(pady=20, fill='x', padx=10, anchor='w')
 
 pick_button = tk.Button(root, text="Select File", command=handle_file_pick)
 pick_button.pack(pady=20)
@@ -63,7 +85,7 @@ radio2 = tk.Radiobutton(frame2, variable=selected_option, value=2)
 radio2.pack(side="left")
 entry2 = tk.Entry(frame2, width=15)
 entry2.pack(side="left", padx=0)
-placeholder = "range eg. 1-10"
+placeholder = "range eg. (1-10)"
 entry2.insert(0, placeholder)
 entry2.config(fg='grey')
 entry2.bind("<FocusIn>", remove_placeholder)
@@ -71,11 +93,13 @@ entry2.bind("<FocusOut>", add_placeholder)
 frame2.pack(side="left")
 radio_frame.pack(pady=2)
 
-confirm_button = tk.Button(root, text="Confirm")
+confirm_button = tk.Button(root, text="Confirm", command=confirm_process)
 confirm_button.pack(pady=20)
 
-help_button = tk.Button(root, text="Help")
+help_button = tk.Button(root, text="Help", command=open_help_window)
 help_button.place(relx=1.0, rely=1.0, anchor="se", x=-10, y=-10)
 
+listbox = tk.Listbox(root)
+listbox.pack(padx=10, pady=10, fill='x')
 root.mainloop()
 # endregion
