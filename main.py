@@ -59,5 +59,8 @@ radio_frame.pack(pady=2)
 confirm_button = tk.Button(root, text="Confirm", command=handle_file_pick)
 confirm_button.pack(pady=20)
 
+help_button = tk.Button(root, text="Help")
+help_button.place(relx=1.0, rely=1.0, anchor="se", x=-10, y=-10)
+
 root.mainloop()
 # endregion
