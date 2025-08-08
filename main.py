@@ -106,7 +106,14 @@ confirm_button.pack(pady=20)
 help_button = tk.Button(root, text="Help", command=open_help_window)
 help_button.place(relx=1.0, rely=1.0, anchor="se", x=-10, y=-10)
 
-listbox = tk.Listbox(root)
-listbox.pack(padx=10, pady=10, fill='x')
+# listbox and scrollbar
+listbox_frame = tk.Frame(root)
+listbox_frame.pack(padx=10, pady=10, fill='x')
+listbox = tk.Listbox(listbox_frame, height=8)
+listbox.pack(side="left", fill="x", expand=True)
+scrollbar = tk.Scrollbar(listbox_frame, orient="vertical", command=listbox.yview)
+scrollbar.pack(side="right", fill="y")
+listbox.config(yscrollcommand=scrollbar.set)
+
 root.mainloop()
 # endregion
