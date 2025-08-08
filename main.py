@@ -20,7 +20,7 @@ def open_help_window() -> None:
     tk.Label(new_window, text="How do I define range?",
              anchor='w', font=("Arial", 14, "bold")).pack(fill='x', padx=10)
     _text="""With the dash (-) character. (1-10) means pages from 1 to 10 (both included).
-You can add other pages by seperating them with commas. For example:
+You can add other pages by separating them with commas. For example:
 (1-4),8,6 means pages 1,2,3,4,8,6
 5,2,(3-7),1 means pages 5,2,3,4,5,6,7,1"""
     tk.Label(new_window, text=_text, anchor="w", justify='left').pack(fill='x', padx=10)
@@ -60,6 +60,10 @@ def is_valid_range_input() -> bool:
     pass
 
 def confirm_process() -> None:
+    """
+    Adds the selected file path to listbox.
+    """
+    global operations
     if selected_file is None:
         messagebox.showwarning(message="Please select a PDF file")
         return
@@ -83,6 +87,7 @@ selected_file_label.pack(pady=20, fill='x', padx=10, anchor='w')
 pick_button = tk.Button(root, text="Select File", command=handle_file_pick)
 pick_button.pack(pady=20)
 
+# radio button
 selected_option = tk.IntVar(value=1)
 radio_frame = tk.Frame(root)
 radio1 = tk.Radiobutton(radio_frame, text="All pages", variable=selected_option, value=1)
@@ -100,9 +105,11 @@ entry2.bind("<FocusOut>", add_placeholder)
 frame2.pack(side="left")
 radio_frame.pack(pady=2)
 
+# confirm button
 confirm_button = tk.Button(root, text="Confirm", command=confirm_process)
 confirm_button.pack(pady=20)
 
+# help button
 help_button = tk.Button(root, text="Help", command=open_help_window)
 help_button.place(relx=1.0, rely=1.0, anchor="se", x=-10, y=-10)
 
