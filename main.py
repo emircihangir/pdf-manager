@@ -9,7 +9,7 @@ selected_file: str | None = None
 def open_help_window() -> None:
     new_window = tk.Toplevel(root)
     new_window.title("Help")
-    new_window.geometry("300x200")
+    new_window.geometry("600x300")
     tk.Label(new_window, text="How do I define range?",
              anchor='w', font=("Arial", 14, "bold")).pack(fill='x', padx=10)
     _text="""With the dash (-) character. (1-10) means pages from 1 to 10 (both included).
@@ -67,7 +67,7 @@ def confirm_process() -> None:
 
 # region building the ui
 root = tk.Tk()
-root.geometry("600x400")
+root.geometry("600x500")
 root.title("PDF Manager")
 
 selected_file_label = tk.Label(root, text="No file selected")
