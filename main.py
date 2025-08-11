@@ -1,11 +1,13 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from enum import Enum
 import re
 from input_issue import InputIssue
 
 # region global variables
 selected_file: str | None = None
+operations: dict[str, list[int]] = {}
+
+
 # endregion
 
 # region ui functions
@@ -47,18 +49,77 @@ def handle_file_pick() -> None:
 
 # noinspection PyUnusedLocal
 def add_placeholder(event) -> None:
-    if entry2.get() == "":
-        entry2.insert(0, placeholder)
-        entry2.config(fg='grey')
+    if range_input.get() == "":
+        range_input.insert(0, placeholder)
+        range_input.config(fg='grey')
+
 
 # noinspection PyUnusedLocal
 def remove_placeholder(event) -> None:
-    if entry2.get() == placeholder:
-        entry2.delete(0, tk.END)
-        entry2.config(fg='black')
+    if range_input.get() == placeholder:
+        range_input.delete(0, tk.END)
+        range_input.config(fg='black')
 
-def is_valid_range_input() -> bool:
-    pass
+
+def is_valid_range_input() -> bool | InputIssue:
+    _range_input = clean_range_input()
+
+    # check if there are unclosed parentheses.
+    faulty_parentheses = False
+    for c in _range_input:
+        if c == '(':
+            faulty_parentheses = True
+        elif c == ')':
+            faulty_parentheses = False
+    if faulty_parentheses: return InputIssue.UNCLOSED_PARENTHESES
+
+    # check if the dash character is present between parentheses.
+    matches = re.findall(r'\((.*?)\)', _range_input)
+    for match in matches:
+        if "-" not in match: return InputIssue.NO_DASH_PRESENT
+
+    # check if the input is empty.
+    if len(_range_input) == 0: return InputIssue.EMPTY_INPUT
+
+    return True
+
+
+def clean_range_input() -> str:
+    """
+    Removes space characters, and the leading and trailing commas.
+    :return: The cleaned version of range_input.
+    """
+    _range_input = range_input.get()  # make a copy of input value
+    _range_input = _range_input.replace(' ', '')  # remove space characters
+    _range_input = _range_input.strip(',')  # remove leading and trailing commas if present
+    return _range_input
+
+
+def parse_range_input() -> list[int]:
+    """
+    Converts range input to a list containing page numbers.
+    :return: A list of numbers representing page numbers. If the option "All Pages" is selected, returns a list that just contains the number -1.
+    """
+    if selected_option.get() == 1:  # Option "All Pages" is selected.
+        return [-1]
+    else:  # Custom range is entered.
+        result: list[int] = []
+        range_input_split = clean_range_input().split(',')
+        for n in range_input_split:
+            if "(" in n: # is a range eg. (4-10)
+                n = n.replace("(", "").replace(")", "") # remove parentheses
+                _n = n.split("-")
+                result.extend(
+                    list(
+                        range(
+                            int(_n[0]), int(_n[1]) + 1
+                        )
+                    )
+                )
+            else: # is a number
+                result.append(int(n))
+        return result
+
 
 def confirm_process() -> None:
     """
@@ -69,10 +130,14 @@ def confirm_process() -> None:
         messagebox.showwarning(message="Please select a PDF file")
         return
 
-    if selected_option.get() == 2 and not is_valid_range_input():
-        messagebox.showwarning(message="Invalid range input")
-        return
+    # validate the range input.
+    if selected_option.get() == 2:
+        validation_result = is_valid_range_input()
+        if isinstance(validation_result, InputIssue):
+            messagebox.showwarning(message=validation_result.value)
+            return
 
+    operations[selected_file] = parse_range_input()
     listbox.insert(tk.END, selected_file)
 
 
