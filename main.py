@@ -15,19 +15,23 @@ def open_help_window() -> None:
     new_window.geometry("600x300")
     tk.Label(new_window, text="How do I define range?",
              anchor='w', font=("Arial", 14, "bold")).pack(fill='x', padx=10)
-    _text="""With the dash (-) character. (1-10) means pages from 1 to 10 (both included).
+    _text = """With the dash (-) character. (1-10) means pages from 1 to 10 (both included).
 You can add other pages by separating them with commas. For example:
 (1-4),8,6 means pages 1,2,3,4,8,6
 5,2,(3-7),1 means pages 5,2,3,4,5,6,7,1"""
     tk.Label(new_window, text=_text, anchor="w", justify='left').pack(fill='x', padx=10)
+
 
 def pick_file() -> str | None:
     """
     :return: The chosen file's path. Returns None if no file is selected.
     """
     filepath = filedialog.askopenfilename(title="Select a PDF file", filetypes=[("PDF files", "*.pdf")])
-    if len(filepath) != 0: return filepath
-    else: return None
+    if len(filepath) != 0:
+        return filepath
+    else:
+        return None
+
 
 def handle_file_pick() -> None:
     """
@@ -39,6 +43,7 @@ def handle_file_pick() -> None:
     if file_path is not None:
         selected_file = file_path
         selected_file_label.config(text=file_path)
+
 
 # noinspection PyUnusedLocal
 def add_placeholder(event) -> None:
@@ -70,6 +75,7 @@ def confirm_process() -> None:
 
     listbox.insert(tk.END, selected_file)
 
+
 # endregion
 
 # region building the ui
@@ -89,15 +95,15 @@ radio_frame = tk.Frame(root)
 radio1 = tk.Radiobutton(radio_frame, text="All pages", variable=selected_option, value=1)
 radio1.pack(side="left", padx=10)
 frame2 = tk.Frame(radio_frame)
-radio2 = tk.Radiobutton(frame2, variable=selected_option, value=2)
+radio2 = tk.Radiobutton(frame2, variable=selected_option, value=2, command=lambda: remove_placeholder(None))
 radio2.pack(side="left")
-entry2 = tk.Entry(frame2, width=15)
-entry2.pack(side="left", padx=0)
+range_input = tk.Entry(frame2, width=15)
+range_input.pack(side="left", padx=0)
 placeholder = "range eg. (1-10)"
-entry2.insert(0, placeholder)
-entry2.config(fg='grey')
-entry2.bind("<FocusIn>", remove_placeholder)
-entry2.bind("<FocusOut>", add_placeholder)
+range_input.insert(0, placeholder)
+range_input.config(fg='grey')
+range_input.bind("<FocusIn>", remove_placeholder)
+range_input.bind("<FocusOut>", add_placeholder)
 frame2.pack(side="left")
 radio_frame.pack(pady=2)
 
