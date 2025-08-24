@@ -12,6 +12,15 @@ operations: list[tuple[str, list[int]]] = []
 # endregion
 
 # region ui functions
+def clear_list() -> None:
+    """
+    Clears the list and the global 'operations' variable.
+    :return: None
+    """
+    global operations
+    operations = []
+    listbox.delete(0, tk.END)
+
 def show_snackbar(message: str, duration: int = 3000):
     snackbar = tk.Toplevel(root)
     snackbar.overrideredirect(True)  # remove window decorations
@@ -251,9 +260,18 @@ scrollbar = tk.Scrollbar(listbox_frame, orient="vertical", command=listbox.yview
 scrollbar.pack(side="right", fill="y")
 listbox.config(yscrollcommand=scrollbar.set)
 
+# frame for horizontal buttons
+button_frame = tk.Frame(root)
+button_frame.pack(pady=20)
+
+# clear list button
+clear_list_button = tk.Button(button_frame, text="Clear list", command=clear_list)
+clear_list_button.pack(side="left", padx=10)
+
 # finish button
-finish_button = tk.Button(root, text="Finish", command=finish_process)
-finish_button.pack(pady=20)
+finish_button = tk.Button(button_frame, text="Finish", command=finish_process)
+finish_button.pack(side="left", padx=30)
+
 
 root.mainloop()
 # endregion
