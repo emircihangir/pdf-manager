@@ -62,19 +62,19 @@ def remove_placeholder(event) -> None:
 def is_valid_range_input() -> bool | InputIssue:
     _range_input = clean_range_input()
 
-    # check if there are unclosed parentheses.
+    # Check if there are unclosed parentheses.
     faulty_parentheses = False
     for c in _range_input:
         if c == '(': faulty_parentheses = True
         elif c == ')': faulty_parentheses = False
     if faulty_parentheses: return InputIssue.UNCLOSED_PARENTHESES
 
-    # check if the dash character is present between parentheses.
+    # Check if the dash character is present between parentheses.
     matches = re.findall(r'\((.*?)\)', _range_input)
     for match in matches:
         if "-" not in match: return InputIssue.NO_DASH_PRESENT
 
-    # check if the input is empty.
+    # Check if the input is empty.
     if len(_range_input) == 0: return InputIssue.EMPTY_INPUT
     # TODO: Check if the range is out of bounds by checking the pdf page size.
     return True
@@ -138,7 +138,8 @@ def confirm_process() -> None:
 
 
 # endregion
-
+# TODO: remove the contents of range input when the option 'All Pages' is selected.
+# TODO: clear list button.
 # region building the ui
 root = tk.Tk()
 root.geometry("600x500")
@@ -153,10 +154,12 @@ pick_button.pack(pady=20)
 # radio button
 selected_option = tk.IntVar(value=1)
 radio_frame = tk.Frame(root)
-radio1 = tk.Radiobutton(radio_frame, text="All pages", variable=selected_option, value=1)
+radio1 = tk.Radiobutton(radio_frame, text="All pages", variable=selected_option,
+                        value=1, command=lambda: root.focus_set())
 radio1.pack(side="left", padx=10)
 frame2 = tk.Frame(radio_frame)
-radio2 = tk.Radiobutton(frame2, variable=selected_option, value=2, command=lambda: remove_placeholder(None))
+radio2 = tk.Radiobutton(frame2, variable=selected_option,
+                        value=2, command=lambda: remove_placeholder(None))
 radio2.pack(side="left")
 range_input = tk.Entry(frame2, width=15)
 range_input.pack(side="left", padx=0)
