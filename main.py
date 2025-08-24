@@ -1,14 +1,37 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import re
-from issues_and_errors import InputIssue, FaultyEndIndexError
+from issues_and_errors import InputIssue, FaultyEndIndexError, ExceedingIndexError
+from pypdf import PdfWriter, PdfReader
+from pathlib import Path
+from uuid import uuid1
 
 # region global variables
 selected_file: str | None = None
-operations: dict[str, list[int]] = {}
+operations: list[tuple[str, list[int]]] = []
 # endregion
 
 # region ui functions
+def show_snackbar(message: str, duration: int = 3000):
+    snackbar = tk.Toplevel(root)
+    snackbar.overrideredirect(True)  # remove window decorations
+    snackbar.configure(bg="#323232")
+
+    # position it at the bottom center of the root window
+    root_x = root.winfo_rootx()
+    root_y = root.winfo_rooty()
+    root_width = root.winfo_width()
+    root_height = root.winfo_height()
+    snackbar.geometry(f"+{root_x + root_width//2 - 100}+{root_y + root_height - 60}")
+
+    label = tk.Label(snackbar, text=message, fg="white", bg="#323232", padx=20, pady=10)
+    label.pack()
+
+    # destroy after duration ms
+    # noinspection PyTypeChecker
+    snackbar.after(duration, snackbar.destroy)
+
+
 def open_help_window() -> None:
     new_window = tk.Toplevel(root)
     new_window.title("Help")
@@ -76,7 +99,23 @@ def is_valid_range_input() -> bool | InputIssue:
 
     # Check if the input is empty.
     if len(_range_input) == 0: return InputIssue.EMPTY_INPUT
-    # TODO: Check if the range is out of bounds by checking the pdf page size.
+
+    # TODO: User must not enter zero.
+
+
+    # Check for invalid characters.
+    for c in _range_input:
+        if c in "(),-": continue # These characters are allowed.
+
+        try: int(c)
+        except ValueError: return InputIssue.INVALID_CHARACTER_PRESENT
+
+    # Check if the range is out of bounds.
+    page_count = len(PdfReader(selected_file).pages)
+    for page_number in parse_range_input():
+        if page_number + 1 > page_count:
+            raise ExceedingIndexError(page_count)
+
     return True
 
 
@@ -110,6 +149,8 @@ def parse_range_input() -> list[int]:
                 result.extend(range(start, end))
             else: # Is a number.
                 result.append(int(n))
+
+        result = [x - 1 for x in result]  # Page index must start with 0, while the user input starts with one.
         return result
 
 
@@ -124,19 +165,41 @@ def confirm_process() -> None:
 
     # validate the range input.
     if selected_option.get() == 2:
-        validation_result = is_valid_range_input()
+        try: validation_result = is_valid_range_input()
+        except ExceedingIndexError as e:
+            messagebox.showwarning(message=f"The selected file has {e.args[0]} pages, but the range input exceeds that number.")
+            return
+
         if isinstance(validation_result, InputIssue):
             messagebox.showwarning(message=validation_result.value)
             return
 
-    try: operations[selected_file] = parse_range_input()
+    try: operations.append((selected_file, parse_range_input()))
     except FaultyEndIndexError as e:
         messagebox.showwarning(message=f"Faulty range '({e.args[0]})'. End index must be greater than start index.")
         return
 
-    listbox.insert(tk.END, selected_file)
+    pages = "All pages"
+    if selected_option.get() == 2: # Custom range is defined.
+        pages = range_input.get()
+    listbox.insert(tk.END, f"{selected_file}\t{pages}")
 
 
+def finish_process() -> None:
+    """
+    Reads the value of the global 'operations' variable and executes the PDF manipulation functions.
+    :return: None
+    """
+    writer = PdfWriter()
+    for file_path, pages in operations:
+        if pages[0] == -1: writer.append(file_path) # Option 'All Pages' is selected.
+        else:
+            writer.append(file_path, pages=pages) # Custom range is defined.
+    output_path: str = str(Path.home() / "Downloads" / f"output{uuid1().hex[:5]}.pdf")
+    writer.write(output_path)
+    writer.close()
+
+    show_snackbar(f"File saved to {output_path}")
 # endregion
 # TODO: remove the contents of range input when the option 'All Pages' is selected.
 # TODO: clear list button.
@@ -187,6 +250,10 @@ listbox.pack(side="left", fill="x", expand=True)
 scrollbar = tk.Scrollbar(listbox_frame, orient="vertical", command=listbox.yview)
 scrollbar.pack(side="right", fill="y")
 listbox.config(yscrollcommand=scrollbar.set)
+
+# finish button
+finish_button = tk.Button(root, text="Finish", command=finish_process)
+finish_button.pack(pady=20)
 
 root.mainloop()
 # endregion
