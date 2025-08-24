@@ -199,6 +199,12 @@ def finish_process() -> None:
     Reads the value of the global 'operations' variable and executes the PDF manipulation functions.
     :return: None
     """
+
+    # Check if the operations list is empty.
+    if len(operations) == 0:
+        messagebox.showwarning(message="Please confirm a process first.")
+        return
+
     writer = PdfWriter()
     for file_path, pages in operations:
         if pages[0] == -1: writer.append(file_path) # Option 'All Pages' is selected.
