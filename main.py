@@ -216,8 +216,10 @@ def finish_process() -> None:
 
     show_snackbar(f"File saved to {output_path}")
 # endregion
+
 # TODO: remove the contents of range input when the option 'All Pages' is selected.
 # TODO: clear list button.
+
 # region building the ui
 root = tk.Tk()
 root.geometry("600x500")

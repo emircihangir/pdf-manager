@@ -9,11 +9,10 @@ class ExceedingIndexError(Exception):
     The *args attribute is a tuple with one element that contains
     the maximum number of pages of the selected file.
     """
-    pass
 
 class FaultyEndIndexError(Exception):
     """Raised when end <= start"""
-    pass
+
 
 class InputIssue(Enum):
     UNCLOSED_PARENTHESES = "Unclosed parentheses detected in the range input."
