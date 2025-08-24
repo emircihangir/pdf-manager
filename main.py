@@ -1,13 +1,11 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import re
-from input_issue import InputIssue
+from issues_and_errors import InputIssue, FaultyEndIndexError
 
 # region global variables
 selected_file: str | None = None
 operations: dict[str, list[int]] = {}
-
-
 # endregion
 
 # region ui functions
@@ -67,10 +65,8 @@ def is_valid_range_input() -> bool | InputIssue:
     # check if there are unclosed parentheses.
     faulty_parentheses = False
     for c in _range_input:
-        if c == '(':
-            faulty_parentheses = True
-        elif c == ')':
-            faulty_parentheses = False
+        if c == '(': faulty_parentheses = True
+        elif c == ')': faulty_parentheses = False
     if faulty_parentheses: return InputIssue.UNCLOSED_PARENTHESES
 
     # check if the dash character is present between parentheses.
@@ -80,7 +76,7 @@ def is_valid_range_input() -> bool | InputIssue:
 
     # check if the input is empty.
     if len(_range_input) == 0: return InputIssue.EMPTY_INPUT
-
+    # TODO: Check if the range is out of bounds by checking the pdf page size.
     return True
 
 
@@ -100,30 +96,26 @@ def parse_range_input() -> list[int]:
     Converts range input to a list containing page numbers.
     :return: A list of numbers representing page numbers. If the option "All Pages" is selected, returns a list that just contains the number -1.
     """
-    if selected_option.get() == 1:  # Option "All Pages" is selected.
+    if selected_option.get() == 1:  # "All Pages" option is selected.
         return [-1]
     else:  # Custom range is entered.
         result: list[int] = []
         range_input_split = clean_range_input().split(',')
         for n in range_input_split:
-            if "(" in n: # is a range eg. (4-10)
-                n = n.replace("(", "").replace(")", "") # remove parentheses
-                _n = n.split("-")
-                result.extend(
-                    list(
-                        range(
-                            int(_n[0]), int(_n[1]) + 1
-                        )
-                    )
-                )
-            else: # is a number
+            if n.startswith("(") and n.endswith(")"): # Is a range eg. (4-10)
+                n = n.strip("()")  # Remove parentheses.
+                start, end = map(int, n.split("-"))
+                end += 1 # Include end page in range.
+                if end <= start: raise FaultyEndIndexError(n)
+                result.extend(range(start, end))
+            else: # Is a number.
                 result.append(int(n))
         return result
 
 
 def confirm_process() -> None:
     """
-    Adds the selected file path to listbox.
+    Modifies the operations variable and adds the selected file path to listbox.
     """
     global operations
     if selected_file is None:
@@ -137,7 +129,11 @@ def confirm_process() -> None:
             messagebox.showwarning(message=validation_result.value)
             return
 
-    operations[selected_file] = parse_range_input()
+    try: operations[selected_file] = parse_range_input()
+    except FaultyEndIndexError as e:
+        messagebox.showwarning(message=f"Faulty range '({e.args[0]})'. End index must be greater than start index.")
+        return
+
     listbox.insert(tk.END, selected_file)
 
 
