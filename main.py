@@ -1,3 +1,4 @@
+import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import re
@@ -5,6 +6,7 @@ from issues_and_errors import InputIssue, FaultyEndIndexError, ExceedingIndexErr
 from pypdf import PdfWriter, PdfReader
 from pathlib import Path
 from uuid import uuid1
+from utils import ActivityBar
 
 # region global variables
 selected_file: str | None = None
@@ -16,6 +18,8 @@ A list that contains tuple with two elements.
 The first element of the tuple is a string representing the file's path.
 The second element is a list of int representing the page numbers.
 """
+
+
 # endregion
 
 # region ui functions
@@ -27,6 +31,7 @@ def clear_list() -> None:
     global operations
     operations = []
     listbox.delete(0, tk.END)
+
 
 def show_snackbar(message: str, duration: int = 3000):
     snackbar = tk.Toplevel(root)
@@ -201,10 +206,30 @@ def confirm_process() -> None:
     listbox.insert(tk.END, f"{selected_file}\t{pages}")
 
 
-def finish_process() -> None:
+def finish_process_task(indicator):
+    """
+    Starts the activity indicator and executes the operations defined in the 'operations' variable.
+    :param ActivityBar indicator: The ActivityBar instance to show during the process.
+    """
+    indicator.start(message="Working...")
+
+    writer = PdfWriter()
+    for file_path, pages in operations:
+        if pages[0] == -1:
+            writer.append(file_path)  # Option 'All Pages' is selected.
+        else:
+            writer.append(file_path, pages=pages)  # Custom range is defined.
+    output_path: str = str(Path.home() / "Downloads" / f"output{uuid1().hex[:5]}.pdf")
+    writer.write(output_path)
+    writer.close()
+
+    indicator.stop()
+    show_snackbar(f"File saved to {output_path}")
+
+
+def finish_process(indicator):
     """
     Reads the value of the global 'operations' variable and executes the PDF manipulation functions.
-    :return: None
     """
 
     # Check if the operations list is empty.
@@ -212,16 +237,13 @@ def finish_process() -> None:
         messagebox.showwarning(message="Please confirm a process first.")
         return
 
-    writer = PdfWriter()
-    for file_path, pages in operations:
-        if pages[0] == -1: writer.append(file_path) # Option 'All Pages' is selected.
-        else:
-            writer.append(file_path, pages=pages) # Custom range is defined.
-    output_path: str = str(Path.home() / "Downloads" / f"output{uuid1().hex[:5]}.pdf")
-    writer.write(output_path)
-    writer.close()
+    # A separate thread is used to be able to show
+    # an activity indicator during the process.
+    task_thread = threading.Thread(target=finish_process_task, args=(indicator,))
+    task_thread.daemon = True
+    task_thread.start()
 
-    show_snackbar(f"File saved to {output_path}")
+
 # endregion
 
 # region building the ui
@@ -280,8 +302,11 @@ button_frame.pack(pady=20)
 clear_list_button = tk.Button(button_frame, text="Clear list", command=clear_list)
 clear_list_button.pack(side="left", padx=10)
 
+# ActivityBar instance
+activity_bar = ActivityBar(root)
+
 # finish button
-finish_button = tk.Button(button_frame, text="Finish", command=finish_process)
+finish_button = tk.Button(button_frame, text="Finish", command=lambda: finish_process(activity_bar))
 finish_button.pack(side="left", padx=30)
 
 root.mainloop()
