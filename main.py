@@ -8,7 +8,14 @@ from uuid import uuid1
 
 # region global variables
 selected_file: str | None = None
+"""Represents the selected file's path as a string."""
+
 operations: list[tuple[str, list[int]]] = []
+"""
+A list that contains tuple with two elements.
+The first element of the tuple is a string representing the file's path.
+The second element is a list of int representing the page numbers.
+"""
 # endregion
 
 # region ui functions
@@ -217,9 +224,6 @@ def finish_process() -> None:
     show_snackbar(f"File saved to {output_path}")
 # endregion
 
-# TODO: remove the contents of range input when the option 'All Pages' is selected.
-# TODO: clear list button.
-
 # region building the ui
 root = tk.Tk()
 root.geometry("600x500")
@@ -279,7 +283,6 @@ clear_list_button.pack(side="left", padx=10)
 # finish button
 finish_button = tk.Button(button_frame, text="Finish", command=finish_process)
 finish_button.pack(side="left", padx=30)
-
 
 root.mainloop()
 # endregion
