@@ -41,9 +41,9 @@ def show_snackbar(message: str, duration: int = 3000):
     # position it at the bottom center of the root window
     root_x = root.winfo_rootx()
     root_y = root.winfo_rooty()
-    root_width = root.winfo_width()
     root_height = root.winfo_height()
-    snackbar.geometry(f"+{root_x + root_width//2 - 100}+{root_y + root_height - 60}")
+    margin = 50
+    snackbar.geometry(f"+{root_x + margin}+{root_y + root_height - margin}")
 
     label = tk.Label(snackbar, text=message, fg="white", bg="#323232", padx=20, pady=10)
     label.pack()
