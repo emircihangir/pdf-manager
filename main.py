@@ -109,8 +109,10 @@ def is_valid_range_input() -> bool | InputIssue:
     # Check if there are unclosed parentheses.
     faulty_parentheses = False
     for c in _range_input:
-        if c == '(': faulty_parentheses = True
-        elif c == ')': faulty_parentheses = False
+        if c == '(':
+            faulty_parentheses = True
+        elif c == ')':
+            faulty_parentheses = False
     if faulty_parentheses: return InputIssue.UNCLOSED_PARENTHESES
 
     # Check if the dash character is present between parentheses.
@@ -123,13 +125,14 @@ def is_valid_range_input() -> bool | InputIssue:
 
     # TODO: User must not enter zero.
 
-
     # Check for invalid characters.
     for c in _range_input:
-        if c in "(),-": continue # These characters are allowed.
+        if c in "(),-": continue  # These characters are allowed.
 
-        try: int(c)
-        except ValueError: return InputIssue.INVALID_CHARACTER_PRESENT
+        try:
+            int(c)
+        except ValueError:
+            return InputIssue.INVALID_CHARACTER_PRESENT
 
     # Check if the range is out of bounds.
     page_count = len(PdfReader(selected_file).pages)
@@ -162,13 +165,13 @@ def parse_range_input() -> list[int]:
         result: list[int] = []
         range_input_split = clean_range_input().split(',')
         for n in range_input_split:
-            if n.startswith("(") and n.endswith(")"): # Is a range eg. (4-10)
+            if n.startswith("(") and n.endswith(")"):  # Is a range eg. (4-10)
                 n = n.strip("()")  # Remove parentheses.
                 start, end = map(int, n.split("-"))
-                end += 1 # Include end page in range.
+                end += 1  # Include end page in range.
                 if end <= start: raise FaultyEndIndexError(n)
                 result.extend(range(start, end))
-            else: # Is a number.
+            else:  # Is a number.
                 result.append(int(n))
 
         result = [x - 1 for x in result]  # Page index must start with 0, while the user input starts with one.
@@ -186,22 +189,25 @@ def confirm_process() -> None:
 
     # validate the range input.
     if selected_option.get() == 2:
-        try: validation_result = is_valid_range_input()
+        try:
+            validation_result = is_valid_range_input()
         except ExceedingIndexError as e:
-            messagebox.showwarning(message=f"The selected file has {e.args[0]} pages, but the range input exceeds that number.")
+            messagebox.showwarning(
+                message=f"The selected file has {e.args[0]} pages, but the range input exceeds that number.")
             return
 
         if isinstance(validation_result, InputIssue):
             messagebox.showwarning(message=validation_result.value)
             return
 
-    try: operations.append((selected_file, parse_range_input()))
+    try:
+        operations.append((selected_file, parse_range_input()))
     except FaultyEndIndexError as e:
         messagebox.showwarning(message=f"Faulty range '({e.args[0]})'. End index must be greater than start index.")
         return
 
     pages = "All pages"
-    if selected_option.get() == 2: # Custom range is defined.
+    if selected_option.get() == 2:  # Custom range is defined.
         pages = range_input.get()
     listbox.insert(tk.END, f"{selected_file}\t{pages}")
 
