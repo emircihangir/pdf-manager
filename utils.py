@@ -87,3 +87,28 @@ class ActivityBar:
             self.top_level = None
             # Release the focus grab
             self.master.grab_release()
+
+
+def show_snackbar(root, message, duration = 3000):
+    """
+    :type root: tk.Tk
+    :type message: str
+    :type duration: int
+    """
+    snackbar = tk.Toplevel(root)
+    snackbar.overrideredirect(True)  # remove window decorations
+    snackbar.configure(bg="#323232")
+
+    # position it at the bottom center of the root window
+    root_x = root.winfo_rootx()
+    root_y = root.winfo_rooty()
+    root_height = root.winfo_height()
+    margin = 50
+    snackbar.geometry(f"+{root_x + margin}+{root_y + root_height - margin}")
+
+    label = tk.Label(snackbar, text=message, fg="white", bg="#323232", padx=20, pady=10)
+    label.pack()
+
+    # destroy after duration ms
+    # noinspection PyTypeChecker
+    snackbar.after(duration, snackbar.destroy)

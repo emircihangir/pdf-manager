@@ -2,11 +2,11 @@ import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import re
-from issues_and_errors import InputIssue, FaultyEndIndexError, ExceedingIndexError
+from issues_and_errors import *
 from pypdf import PdfWriter, PdfReader
 from pathlib import Path
 from uuid import uuid1
-from utils import ActivityBar
+from utils import ActivityBar, show_snackbar
 
 # region global variables
 selected_file: str | None = None
@@ -31,26 +31,6 @@ def clear_list() -> None:
     global operations
     operations = []
     listbox.delete(0, tk.END)
-
-
-def show_snackbar(message: str, duration: int = 3000):
-    snackbar = tk.Toplevel(root)
-    snackbar.overrideredirect(True)  # remove window decorations
-    snackbar.configure(bg="#323232")
-
-    # position it at the bottom center of the root window
-    root_x = root.winfo_rootx()
-    root_y = root.winfo_rooty()
-    root_height = root.winfo_height()
-    margin = 50
-    snackbar.geometry(f"+{root_x + margin}+{root_y + root_height - margin}")
-
-    label = tk.Label(snackbar, text=message, fg="white", bg="#323232", padx=20, pady=10)
-    label.pack()
-
-    # destroy after duration ms
-    # noinspection PyTypeChecker
-    snackbar.after(duration, snackbar.destroy)
 
 
 def open_help_window() -> None:
@@ -230,7 +210,7 @@ def finish_process_task(indicator):
     writer.close()
 
     indicator.stop()
-    show_snackbar(f"File saved to {output_path}")
+    show_snackbar(root, f"File saved to {output_path}")
 
 
 def finish_process(indicator):
