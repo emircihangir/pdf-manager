@@ -9,14 +9,18 @@ from uuid import uuid1
 from utils import ActivityBar, show_snackbar
 
 # region global variables
-selected_file: str | None = None
-"""Represents the selected file's path as a string."""
+selected_file = None
+"""
+Represents the selected file's path as a string.
+:type: str | None
+"""
 
-operations: list[tuple[str, list[int]]] = []
+operations = []
 """
 A list that contains tuple with two elements.
 The first element of the tuple is a string representing the file's path.
 The second element is a list of int representing the page numbers.
+:type: list[tuple[str, list[int]]]
 """
 
 
@@ -33,7 +37,7 @@ def clear_list() -> None:
     listbox.delete(0, tk.END)
 
 
-def open_help_window() -> None:
+def open_help_window():
     new_window = tk.Toplevel(root)
     new_window.title("Help")
     new_window.geometry("600x300")
@@ -46,9 +50,10 @@ You can add other pages by separating them with commas. For example:
     tk.Label(new_window, text=_text, anchor="w", justify='left').pack(fill='x', padx=10)
 
 
-def pick_file() -> str | None:
+def pick_file():
     """
     :return: The chosen file's path. Returns None if no file is selected.
+    :rtype: str | None
     """
     filepath = filedialog.askopenfilename(title="Select a PDF file", filetypes=[("PDF files", "*.pdf")])
     if len(filepath) != 0:
@@ -158,7 +163,7 @@ def parse_range_input() -> list[int]:
         return result
 
 
-def confirm_process() -> None:
+def confirm_process():
     """
     Modifies the operations variable and adds the selected file path to listbox.
     """
