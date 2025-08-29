@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
+from typing import Callable
+
 
 class ActivityBar:
     """
@@ -112,3 +114,69 @@ def show_snackbar(root, message, duration = 3000):
     # destroy after duration ms
     # noinspection PyTypeChecker
     snackbar.after(duration, snackbar.destroy)
+
+
+class ScrollableFrame:
+    def __init__(self, parent, right_command: Callable[[], None]):
+        """
+        :param right_command: The command to execute when the right chevron button is clicked.
+        """
+        # Create main container
+        self.container = tk.Frame(parent)
+
+        self.top_frame = tk.Frame(self.container)
+
+        # Create chevron button
+        self.right_chevron = tk.Button(
+            self.top_frame,
+            text="›",
+            font=("Arial", 16, "bold"),
+            width=2,
+            command=right_command
+        )
+
+        # Create canvas
+        self.canvas = tk.Canvas(self.top_frame, height=600)
+        # Add horizontal scrollbar
+        self.h_scrollbar = tk.Scrollbar(self.container, orient="horizontal", command=self.canvas.xview)
+        self.canvas.configure(xscrollcommand=self.h_scrollbar.set)
+
+        # Create the scrollable frame
+        self.scrollable_frame = tk.Frame(self.canvas)
+
+        # Configure scrolling
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        )
+
+        # Create window in canvas
+        self.canvas_window = self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+
+        # Bind canvas resize to update scrollable frame height
+        self.canvas.bind('<Configure>', self.on_canvas_configure)
+
+        # Pack elements with chevron button into top_frame
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.right_chevron.pack(side="left", fill="y")
+
+        # Pack scrollbar at bottom of container
+        self.h_scrollbar.pack(side="bottom", fill="x")
+        # Pack top_frame above scrollbar
+        self.top_frame.pack(side="top", fill="both", expand=True)
+
+    def on_canvas_configure(self, event):
+        # Update the height of the scrollable frame to match canvas height
+        canvas_height = event.height
+        self.canvas.itemconfig(self.canvas_window, height=canvas_height)
+
+    def pack(self, **kwargs):
+        self.container.pack(**kwargs)
+
+    def grid(self, **kwargs):
+        self.container.grid(**kwargs)
+
+    def clear(self):
+        """Remove all widgets inside the scrollable frame."""
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()

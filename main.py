@@ -6,35 +6,119 @@ from issues_and_errors import *
 from pypdf import PdfWriter, PdfReader
 from pathlib import Path
 from uuid import uuid1
-from utils import ActivityBar, show_snackbar
+from utils import ActivityBar, show_snackbar, ScrollableFrame
+from PIL import ImageTk, Image
+# noinspection PyPackageRequirements
+import fitz
+import io
 
 # region global variables
-selected_file = None
+selected_file: str | None = None
 """
 Represents the selected file's path as a string.
-:type: str | None
 """
 
-operations = []
+operations: list[tuple[str, list[int]]] = []
 """
 A list that contains tuple with two elements.
 The first element of the tuple is a string representing the file's path.
 The second element is a list of int representing the page numbers.
-:type: list[tuple[str, list[int]]]
+
+Example::
+
+    operations = [
+        ("file1.pdf", [1, 2, 3]),
+        ("file2.pdf", [2, 7]),
+        ("file1.pdf", [64, 29, 50])
+    ]
 """
+
+last_previewed_page: int = 0
 
 
 # endregion
 
 # region ui functions
-def clear_list() -> None:
+# noinspection PyInconsistentReturns,PyTypeChecker
+def parse_page_index(page_index: int) -> tuple[str, int]:
+    """
+    Example::
+
+        operations = [
+            ("file1.pdf", [1,2,3]),
+            ("file2.pdf", [2,7])
+        ]
+        parse_page_index(0) returns ("file1.pdf", 1)
+        parse_page_index(1) returns ("file1.pdf", 2)
+        parse_page_index(2) returns ("file1.pdf", 3)
+        parse_page_index(3) returns ("file2.pdf", 2)
+        parse_page_index(4) returns ("file2.pdf", 7)
+
+    :param page_index: The page index of the output file.
+    """
+
+    if page_index < 0: return "none", -1
+
+    counter = 0
+    for file_path, file_pages in operations:
+        if -1 in file_pages: file_pages = list(
+            range(PdfReader(file_path).get_num_pages()))  # Expand the [-1] statement.
+
+        for page in file_pages:
+            if counter == page_index: return file_path, page
+            counter += 1
+
+    return "none", -1
+
+
+def page_preview(final_page_index: int):
+    """
+    Adds the preview of the page to scrollable frame.
+    :param final_page_index: The page index of the output file.
+    """
+    pdf_path, page_index = parse_page_index(final_page_index)
+    if pdf_path == "none" and page_index == -1: return
+
+    doc = fitz.open(pdf_path)
+    page = doc[page_index]
+    zoom = 1
+    mat = fitz.Matrix(zoom, zoom)
+    # noinspection PyUnresolvedReferences
+    pix = page.get_pixmap(matrix=mat)
+    img_data = pix.tobytes("ppm")
+    pil_image = Image.open(io.BytesIO(img_data))
+    doc.close()
+    # Resize image to fit vertical space
+    frame_height = scrollable.scrollable_frame.winfo_height() or 400  # fallback if not yet rendered
+    scale = frame_height / pil_image.height
+    new_width = int(pil_image.width * scale)
+    new_height = frame_height
+    pil_image = pil_image.resize((new_width, new_height))
+    photo = ImageTk.PhotoImage(pil_image)
+    # noinspection PyTypeChecker
+    label = tk.Label(scrollable.scrollable_frame, image=photo)
+    label.image = photo
+    label.pack(side="left", fill="y")
+
+
+def preview_next_page():
+    """
+    Adds the next 5 pages' previews to the scrollable frame.
+    """
+    global last_previewed_page
+    for _ in range(5):
+        page_preview(last_previewed_page)
+        last_previewed_page += 1
+
+
+def clear_list():
     """
     Clears the list and the global 'operations' variable.
-    :return: None
     """
     global operations
     operations = []
     listbox.delete(0, tk.END)
+    reset_preview_frame()
 
 
 def open_help_window():
@@ -50,10 +134,9 @@ You can add other pages by separating them with commas. For example:
     tk.Label(new_window, text=_text, anchor="w", justify='left').pack(fill='x', padx=10)
 
 
-def pick_file():
+def pick_file() -> str | None:
     """
     :return: The chosen file's path. Returns None if no file is selected.
-    :rtype: str | None
     """
     filepath = filedialog.askopenfilename(title="Select a PDF file", filetypes=[("PDF files", "*.pdf")])
     if len(filepath) != 0:
@@ -62,7 +145,7 @@ def pick_file():
         return None
 
 
-def handle_file_pick() -> None:
+def handle_file_pick():
     """
     Updates the selected_file_label content and the selected_file
     global variable with the selected file's path.
@@ -163,6 +246,11 @@ def parse_range_input() -> list[int]:
         return result
 
 
+def reset_preview_frame():
+    scrollable.clear()
+    global last_previewed_page
+    last_previewed_page = 0
+
 def confirm_process():
     """
     Modifies the operations variable and adds the selected file path to listbox.
@@ -191,10 +279,14 @@ def confirm_process():
         messagebox.showwarning(message=f"Faulty range '({e.args[0]})'. End index must be greater than start index.")
         return
 
-    pages = "All pages"
+    # Preview the output.
+    reset_preview_frame()
+    preview_next_page()
+
+    pages_value = "All pages"
     if selected_option.get() == 2:  # Custom range is defined.
-        pages = range_input.get()
-    listbox.insert(tk.END, f"{selected_file}\t{pages}")
+        pages_value = range_input.get()
+    listbox.insert(tk.END, f"{selected_file}\t{pages_value}")
 
 
 def finish_process_task(indicator):
@@ -221,6 +313,7 @@ def finish_process_task(indicator):
 def finish_process(indicator):
     """
     Reads the value of the global 'operations' variable and executes the PDF manipulation functions.
+    :param ActivityBar indicator: The ActivityBar instance to show during the process.
     """
 
     # Check if the operations list is empty.
@@ -239,7 +332,7 @@ def finish_process(indicator):
 
 # region building the ui
 root = tk.Tk()
-root.geometry("600x500")
+root.geometry("600x800")
 root.title("PDF Manager")
 
 selected_file_label = tk.Label(root, text="No file selected")
@@ -299,6 +392,10 @@ activity_bar = ActivityBar(root)
 # finish button
 finish_button = tk.Button(button_frame, text="Finish", command=lambda: finish_process(activity_bar))
 finish_button.pack(side="left", padx=30)
+
+# Create scrollable frame
+scrollable = ScrollableFrame(root,preview_next_page)
+scrollable.pack(fill="x", padx=10, pady=10)
 
 root.mainloop()
 # endregion
