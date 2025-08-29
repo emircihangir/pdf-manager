@@ -366,10 +366,6 @@ radio_frame.pack(pady=2)
 confirm_button = tk.Button(root, text="Confirm", command=confirm_process)
 confirm_button.pack(pady=20)
 
-# help button
-help_button = tk.Button(root, text="Help", command=open_help_window)
-help_button.place(relx=1.0, rely=1.0, anchor="se", x=-10, y=-10)
-
 # listbox and scrollbar
 listbox_frame = tk.Frame(root)
 listbox_frame.pack(padx=10, pady=10, fill='x')
@@ -383,6 +379,10 @@ listbox.config(yscrollcommand=scrollbar.set)
 button_frame = tk.Frame(root)
 button_frame.pack(pady=20)
 
+# help button
+help_button = tk.Button(button_frame, text="Help", command=open_help_window)
+help_button.pack(side="left", padx=10)
+
 # clear list button
 clear_list_button = tk.Button(button_frame, text="Clear list", command=clear_list)
 clear_list_button.pack(side="left", padx=10)
@@ -392,7 +392,7 @@ activity_bar = ActivityBar(root)
 
 # finish button
 finish_button = tk.Button(button_frame, text="Finish", command=finish_process)
-finish_button.pack(side="left", padx=30)
+finish_button.pack(side="left", padx=10)
 
 # Create scrollable frame
 scrollable = ScrollableFrame(root,preview_next_page)
