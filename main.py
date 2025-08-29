@@ -105,10 +105,19 @@ def preview_next_page():
     """
     Adds the next 5 pages' previews to the scrollable frame.
     """
-    global last_previewed_page
-    for _ in range(5):
-        page_preview(last_previewed_page)
-        last_previewed_page += 1
+    def _task():
+        global last_previewed_page
+        activity_bar.start(message="Working...")
+        for _ in range(5):
+            page_preview(last_previewed_page)
+            last_previewed_page += 1
+        activity_bar.stop()
+
+    # A separate thread is used to be able to show
+    # an activity indicator during the process.
+    task_thread = threading.Thread(target=_task)
+    task_thread.daemon = True
+    task_thread.start()
 
 
 def clear_list():
@@ -190,8 +199,6 @@ def is_valid_range_input() -> bool | InputIssue:
 
     # Check if the input is empty.
     if len(_range_input) == 0: return InputIssue.EMPTY_INPUT
-
-    # TODO: User must not enter zero.
 
     # Check for invalid characters.
     for c in _range_input:
@@ -289,32 +296,26 @@ def confirm_process():
     listbox.insert(tk.END, f"{selected_file}\t{pages_value}")
 
 
-def finish_process_task(indicator):
-    """
-    Starts the activity indicator and executes the operations defined in the 'operations' variable.
-    :param ActivityBar indicator: The ActivityBar instance to show during the process.
-    """
-    indicator.start(message="Working...")
-
-    writer = PdfWriter()
-    for file_path, pages in operations:
-        if pages[0] == -1:
-            writer.append(file_path)  # Option 'All Pages' is selected.
-        else:
-            writer.append(file_path, pages=pages)  # Custom range is defined.
-    output_path: str = str(Path.home() / "Downloads" / f"output{uuid1().hex[:5]}.pdf")
-    writer.write(output_path)
-    writer.close()
-
-    indicator.stop()
-    show_snackbar(root, f"File saved to {output_path}")
-
-
-def finish_process(indicator):
+def finish_process():
     """
     Reads the value of the global 'operations' variable and executes the PDF manipulation functions.
-    :param ActivityBar indicator: The ActivityBar instance to show during the process.
     """
+
+    def _task():
+        activity_bar.start(message="Working...")
+
+        writer = PdfWriter()
+        for file_path, pages in operations:
+            if pages[0] == -1:
+                writer.append(file_path)  # Option 'All Pages' is selected.
+            else:
+                writer.append(file_path, pages=pages)  # Custom range is defined.
+        output_path: str = str(Path.home() / "Downloads" / f"output{uuid1().hex[:5]}.pdf")
+        writer.write(output_path)
+        writer.close()
+
+        activity_bar.stop()
+        show_snackbar(root, f"File saved to {output_path}")
 
     # Check if the operations list is empty.
     if len(operations) == 0:
@@ -323,7 +324,7 @@ def finish_process(indicator):
 
     # A separate thread is used to be able to show
     # an activity indicator during the process.
-    task_thread = threading.Thread(target=finish_process_task, args=(indicator,))
+    task_thread = threading.Thread(target=_task)
     task_thread.daemon = True
     task_thread.start()
 
@@ -390,7 +391,7 @@ clear_list_button.pack(side="left", padx=10)
 activity_bar = ActivityBar(root)
 
 # finish button
-finish_button = tk.Button(button_frame, text="Finish", command=lambda: finish_process(activity_bar))
+finish_button = tk.Button(button_frame, text="Finish", command=finish_process)
 finish_button.pack(side="left", padx=30)
 
 # Create scrollable frame
